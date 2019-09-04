@@ -12,6 +12,8 @@ from keras.layers import Input
 from keras.models import Model
 from keras.optimizers import SGD
 from sklearn.metrics import classification_report
+import config
+from imutils import paths
 import matplotlib.pyplot as plt
 import numpy as np
 import pickle
@@ -109,36 +111,85 @@ headModel = Dense(len(config.CLASSES), activation="softmax")(headModel)
 # the actual model we will train)
 model = Model(inputs=baseModel.input, outputs=headModel)
 
-# loop over all layers in the base model and freeze them so they will
-# *not* be updated during the first training process
-for layer in baseModel.layers:
-	layer.trainable = False
+def train_freezing(model):
+	# loop over all layers in the base model and freeze them so they will
+	# *not* be updated during the first training process
+	for layer in baseModel.layers:
+		layer.trainable = False
 
-# compile our model (this needs to be done after our setting our
-# layers to being non-trainable
-print("[INFO] compiling model...")
-opt = SGD(lr=1e-4, momentum=0.9)
-model.compile(loss="categorical_crossentropy", optimizer=opt,
-			  metrics=["accuracy"])
+	# compile our model (this needs to be done after our setting our
+	# layers to being non-trainable
+	print("[INFO] compiling model...")
+	opt = SGD(lr=1e-4, momentum=0.9)
+	model.compile(loss="categorical_crossentropy", optimizer=opt,
+				  metrics=["accuracy"])
 
-# train the head of the network for a few epochs (all other layers
-# are frozen) -- this will allow the new FC layers to start to become
-# initialized with actual "learned" values versus pure random
-print("[INFO] training head...")
-H = model.fit_generator(
-	trainGen,
-	steps_per_epoch=totalTrain // config.BATCH_SIZE,
-	validation_data=valGen,
-	validation_steps=totalVal // config.BATCH_SIZE,
-	epochs=50)
+	# train the head of the network for a few epochs (all other layers
+	# are frozen) -- this will allow the new FC layers to start to become
+	# initialized with actual "learned" values versus pure random
+	print("[INFO] training head...")
+	H = model.fit_generator(
+		trainGen,
+		steps_per_epoch=totalTrain // config.BATCH_SIZE,
+		validation_data=valGen,
+		validation_steps=totalVal // config.BATCH_SIZE,
+		epochs=50)
 
-# reset the testing generator and evaluate the network after
-# fine-tuning just the network head
-print("[INFO] evaluating after fine-tuning network head...")
-testGen.reset()
-predIdxs = model.predict_generator(testGen,
-								   steps=(totalTest // config.BATCH_SIZE) + 1)
-predIdxs = np.argmax(predIdxs, axis=1)
-print(classification_report(testGen.classes, predIdxs,
-							target_names=testGen.class_indices.keys()))
-plot_training(H, 50, config.WARMUP_PLOT_PATH)
+	# reset the testing generator and evaluate the network after
+	# fine-tuning just the network head
+	print("[INFO] evaluating after fine-tuning network head...")
+	testGen.reset()
+	predIdxs = model.predict_generator(testGen,
+									   steps=(totalTest // config.BATCH_SIZE) + 1)
+	predIdxs = np.argmax(predIdxs, axis=1)
+	print(classification_report(testGen.classes, predIdxs,
+								target_names=testGen.class_indices.keys()))
+	plot_training(H, 50, config.WARMUP_PLOT_PATH)
+
+def train_unfreeze(model):
+	# Unfreezing the head
+	# reset our data generators
+	trainGen.reset()
+	valGen.reset()
+
+	# now that the head FC layers have been trained/initialized, lets
+	# unfreeze the final set of CONV layers and make them trainable
+	for layer in baseModel.layers[15:]:
+		layer.trainable = True
+
+	# loop over the layers in the model and show which ones are trainable
+	# or not
+	for layer in baseModel.layers:
+		print("{}: {}".format(layer, layer.trainable))
+	# for the changes to the model to take affect we need to recompile
+	# the model, this time using SGD with a *very* small learning rate
+	print("[INFO] re-compiling model...")
+	opt = SGD(lr=1e-4, momentum=0.9)
+	model.compile(loss="categorical_crossentropy", optimizer=opt,
+				  metrics=["accuracy"])
+
+	# train the model again, this time fine-tuning *both* the final set
+	# of CONV layers along with our set of FC layers
+	H = model.fit_generator(
+		trainGen,
+		steps_per_epoch=totalTrain // config.BATCH_SIZE,
+		validation_data=valGen,
+		validation_steps=totalVal // config.BATCH_SIZE,
+		epochs=20)
+
+	# reset the testing generator and then use our trained model to
+	# make predictions on the data
+	print("[INFO] evaluating after fine-tuning network...")
+	testGen.reset()
+	predIdxs = model.predict_generator(testGen,
+									   steps=(totalTest // config.BATCH_SIZE) + 1)
+	predIdxs = np.argmax(predIdxs, axis=1)
+	print(classification_report(testGen.classes, predIdxs,
+								target_names=testGen.class_indices.keys()))
+	plot_training(H, 20, config.UNFROZEN_PLOT_PATH)
+
+	# serialize the model to disk
+	print("[INFO] serializing network...")
+	model.save(config.MODEL_PATH)
+
+train_freezing(model)
