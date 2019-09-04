@@ -4,7 +4,7 @@ matplotlib.use("Agg")
 
 # import the necessary packages
 from keras.preprocessing.image import ImageDataGenerator
-from keras.applications import VGG16
+from keras.applications import VGG16, NASNetLarge
 from keras.layers.core import Dropout
 from keras.layers.core import Flatten
 from keras.layers.core import Dense
@@ -16,7 +16,6 @@ import config
 from imutils import paths
 import matplotlib.pyplot as plt
 import numpy as np
-import pickle
 import os
 
 
@@ -40,12 +39,16 @@ trainPath = os.path.sep.join([config.BASE_PATH, config.TRAIN])
 valPath = os.path.sep.join([config.BASE_PATH, config.VAL])
 testPath = os.path.sep.join([config.BASE_PATH, config.TEST])
 
+
 # determine the total number of image paths in training, validation,
 # and testing directories
 totalTrain = len(list(paths.list_images(trainPath)))
 totalVal = len(list(paths.list_images(valPath)))
 totalTest = len(list(paths.list_images(testPath)))
 
+# totalTrain = len(os.listdir(trainPath))
+# totalVal = len(os.listdir(valPath))
+# totalTest = len(os.listdir(testPath))
 # initialize the training data augmentation object
 trainAug = ImageDataGenerator(
 	rotation_range=30,
@@ -96,7 +99,7 @@ testGen = valAug.flow_from_directory(
 
 # load the VGG16 network, ensuring the head FC layer sets are left
 # off
-baseModel = VGG16(weights="imagenet", include_top=False,
+baseModel = NASNetLarge(weights="imagenet", include_top=False,
 	input_tensor=Input(shape=(224, 224, 3)))
 
 # construct the head of the model that will be placed on top of the

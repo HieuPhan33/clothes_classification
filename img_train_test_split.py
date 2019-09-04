@@ -18,17 +18,21 @@ def img_train_test_split(img_source_dir,splits,labels):
     if not (isinstance(splits[0], float) or isinstance(splits[1], float) ):
         raise AttributeError('train_size must be a float')
     # Set up empty folder structure if not exists
-    if not os.path.exists('data'):
-        os.makedirs('data')
-    else:
-        if not os.path.exists('data/train'):
-            os.makedirs('data/train')
-        if not os.path.exists('data/validation'):
-            os.makedirs('data/validation')
+
         # Get the subdirectories in the main image folder
     train_dir = os.path.join(config.BASE_PATH,config.TRAIN)
     val_dir = os.path.join(config.BASE_PATH,config.VAL)
     test_dir = os.path.join(config.BASE_PATH,config.TEST)
+
+    if not os.path.exists(config.BASE_PATH):
+        os.makedirs(config.BASE_PATH)
+    else:
+        if not os.path.exists(train_dir):
+            os.makedirs(train_dir)
+        if not os.path.exists(val_dir):
+            os.makedirs(val_dir)
+        if not os.path.exists(test_dir):
+            os.makedirs(test_dir)
     for label in config.CLASSES:
         train_label_dir = os.path.join(train_dir,label)
         val_label_dir = os.path.join(val_dir,label)
@@ -59,13 +63,13 @@ def img_train_test_split(img_source_dir,splits,labels):
                 label = str(labels[id])
                 train_label_dir = os.path.join(train_dir,label,filename)
                 validation_label_dir = os.path.join(val_dir,label,filename)
-                test_label_dir = os.path.join(val_dir, label, filename)
+                test_label_dir = os.path.join(test_dir, label, filename)
 
                 seed = random.uniform(0,1)
                 if seed <= splits[0]:
                     copyfile(os.path.join(subdir_fullpath, filename),
                              train_label_dir)
-                elif seed > splits[0] and seed < splits[1]:
+                elif seed > splits[0] and seed < splits[0] + splits[1]:
                     copyfile(os.path.join(subdir_fullpath, filename),
                              validation_label_dir)
                 else:
