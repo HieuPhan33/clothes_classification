@@ -7,6 +7,7 @@ BASE_PATH='data'
 TRAIN = "training"
 VAL = "validation"
 TEST = "evaluation"
+EXTTRAIN = "extension_training"
 
 # set the batch size when fine-tuning
 BATCH_SIZE = 32
