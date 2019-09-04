@@ -3,6 +3,8 @@ import random
 import config
 from shutil import copyfile
 import pandas as pd
+import argparse
+parser = argparse.
 
 def img_train_test_split(img_source_dir,train_size,labels):
     if not (isinstance(img_source_dir, str)):
@@ -92,6 +94,7 @@ def img_train_test_split_(img_source_dir, train_size):
     subdirs = [subdir for subdir in os.listdir(img_source_dir) if os.path.isdir(os.path.join(img_source_dir, subdir))]
 
     for subdir in subdirs:
+        if subdir == 'Test-Images': continue
         subdir_fullpath = os.path.join(img_source_dir, subdir)
         if len(os.listdir(subdir_fullpath)) == 0:
             print(subdir_fullpath + ' is empty')
