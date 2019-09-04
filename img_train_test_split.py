@@ -43,6 +43,8 @@ def img_train_test_split(img_source_dir,train_size,labels):
                os.path.isdir(os.path.join(img_source_dir, subdir))]
 
     for subdir in subdirs: # Iterate each sub-directory
+        if subdir == 'Test-Images':
+            continue
         subdir_fullpath = os.path.join(img_source_dir, subdir)
 
         for filename in os.listdir(subdir_fullpath):
@@ -133,9 +135,9 @@ def img_train_test_split_(img_source_dir, train_size):
         print('Copied ' + str(validation_counter) + ' images to data/validation/' + subdir)
 
 def main():
-    df = pd.read_csv(os.path.join(argparse.source,'labels.csv'))
+    df = pd.read_csv(os.path.join(args.source,'labels.csv'))
     labels = df["Expected"]
-    img_train_test_split(argparse.source,0.8,list(labels))
+    img_train_test_split(args.source,0.8,list(labels))
 
 if __name__ == '__main__':
     main()
