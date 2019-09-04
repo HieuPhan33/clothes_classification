@@ -4,7 +4,9 @@ import config
 from shutil import copyfile
 import pandas as pd
 import argparse
-parser = argparse.
+parser = argparse.ArgumentParser(description='Process some integers.')
+parser.add_argument('--source','-s',default="data_src")
+args = parser.parse_args()
 
 def img_train_test_split(img_source_dir,train_size,labels):
     if not (isinstance(img_source_dir, str)):
@@ -131,9 +133,9 @@ def img_train_test_split_(img_source_dir, train_size):
         print('Copied ' + str(validation_counter) + ' images to data/validation/' + subdir)
 
 def main():
-    df = pd.read_csv('data_src/labels.csv')
+    df = pd.read_csv(os.path.join(argparse.source,'labels.csv'))
     labels = df["Expected"]
-    img_train_test_split('data_src',0.8,list(labels))
+    img_train_test_split(argparse.source,0.8,list(labels))
 
 if __name__ == '__main__':
     main()
